@@ -1,0 +1,865 @@
+/* MT5 Position Studio — interface styles.
+ *
+ * Dark by default, not by fashion: these charts are read at 3am with the room
+ * lights off, and a white panel next to a midnight candle chart is painful. A
+ * daylight theme exists for the other case and is opt-in (see ── daylight).
+ * Colour is used sparingly and always means something — the accent is the app,
+ * green is money made, red is money lost, amber is "look at this".
+ *
+ * Everything themeable goes through a custom property. A literal hex below the
+ * token block is a bug: it will stay dark when the theme changes.
+ */
+
+/* ── font ─────────────────────────────────────────────────────────────
+ * Vazirmatn, vendored rather than pulled from a CDN: this app has to work on a
+ * machine with no internet and must not phone anywhere at startup.
+ *
+ * Two files, split by script and declared with `unicode-range`, so a window
+ * showing only English never downloads the Arabic outlines. The Latin file was
+ * subset from the same variable font, which is why the two never disagree about
+ * a stroke weight the way a Latin face paired with a foreign Arabic one would.
+ */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  unicode-range: U+0000-024F, U+2000-206F, U+20A0-20BF, U+2190-21FF, U+2200-22FF;
+}
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/vazirmatn-arabic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+  /* Arabic block, its presentation forms, and the joiners Persian needs. Without
+   * this file a note typed in Persian silently falls back to a system font and
+   * sits at a different weight beside the rest of the interface. */
+  unicode-range: U+0600-06FF, U+0750-077F, U+200C-200F, U+FB50-FDFF, U+FE70-FEFF;
+}
+
+:root {
+  --bg:        #0B0F17;
+  --bg-2:      #101725;
+  --panel:     #141C2B;
+  --panel-2:   #182131;
+  --line:      #222E42;
+  --line-soft: #1B2534;
+
+  --ink:       #E8EEF7;
+  --ink-2:     #A9B6CA;
+  --ink-3:     #6C7B92;
+
+  --accent:    #38E1D0;
+  --accent-2:  #1FA9C4;
+  /* The accent as a bare triple, so every soft tint of it can be written
+   * rgba(var(--accent-rgb), 0.12). Setting these three variables then recolours
+   * the whole app - glows, focus rings, washes and all - which is what the
+   * accent setting needs. A hex variable cannot do this: rgba() will not take
+   * one, so the tints would stay teal while the solids changed. */
+  --accent-rgb: 56, 225, 208;
+  --accent-dim:rgba(var(--accent-rgb), 0.12);
+
+  --up:        #3DDC97;
+  --down:      #FF6B6B;
+  --flat:      #8B9AB2;
+  --warn:      #FFB454;
+  --violet:    #A78BFA;
+  /* Same reasoning as --accent-rgb: a buy tag, a warning pill and an open-position
+   * row are all washes of one of these, and rgba() cannot take the hex. Keep each
+   * triple in step with the hex above it — they are the same colour twice. */
+  --up-rgb:     61, 220, 151;
+  --down-rgb:   255, 107, 107;
+  --warn-rgb:   255, 180, 84;
+  --violet-rgb: 167, 139, 250;
+
+  --radius:    14px;
+  --radius-sm: 9px;
+  --rail:      86px;
+
+  --shadow:    0 18px 44px rgba(0, 0, 0, 0.44);
+  --shadow-sm: 0 6px 18px rgba(0, 0, 0, 0.3);
+
+  --mono: 'Cascadia Mono', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+}
+
+/* ── accents ──────────────────────────────────────────────────────────
+ * Four, and no colour picker. An arbitrary hex lets you choose something that
+ * collides with the green of a win or the red of a loss, and in this app those
+ * two colours carry meaning that must never be ambiguous. Each of these is
+ * distinguishable from both.
+ */
+html[data-accent='violet'] {
+  --accent: #A78BFA; --accent-2: #7C5CE0; --accent-rgb: 167, 139, 250;
+}
+html[data-accent='amber'] {
+  --accent: #FFB454; --accent-2: #E08A1F; --accent-rgb: 255, 180, 84;
+}
+html[data-accent='rose'] {
+  --accent: #FF8FA8; --accent-2: #E05575; --accent-rgb: 255, 143, 168;
+}
+
+/* ── daylight ─────────────────────────────────────────────────────────
+ * The app is dark by default and that is the right default for 3am. But a
+ * chart printed for a mentor, or a screen beside a sunlit window, needs the
+ * other one. Only the surface and ink tokens move: win green, loss red and the
+ * accent keep their meaning, darkened just enough to hold contrast on white.
+ */
+html[data-theme='light'] {
+  --bg:        #F4F7FB;
+  --bg-2:      #FFFFFF;
+  --panel:     #FFFFFF;
+  --panel-2:   #F7F9FC;
+  --line:      #DCE4EF;
+  --line-soft: #E9EEF6;
+
+  --ink:       #16202E;
+  --ink-2:     #4B5A70;
+  --ink-3:     #7A8798;
+
+  --accent:    #0E9C93;
+  --accent-2:  #0A7C8E;
+  --accent-rgb: 14, 156, 147;
+
+  --up:        #0E9A63;
+  --down:      #D6394B;
+  --flat:      #6C7A8C;
+  --warn:      #B5720A;
+  --violet:    #6D4CD6;
+  --up-rgb:     14, 154, 99;
+  --down-rgb:   214, 57, 75;
+  --warn-rgb:   181, 114, 10;
+  --violet-rgb: 109, 76, 214;
+
+  --shadow:    0 18px 44px rgba(24, 40, 68, 0.14);
+  --shadow-sm: 0 6px 18px rgba(24, 40, 68, 0.09);
+}
+html[data-theme='light'][data-accent='violet'] {
+  --accent: #6D4CD6; --accent-2: #563BB0; --accent-rgb: 109, 76, 214;
+}
+html[data-theme='light'][data-accent='amber'] {
+  --accent: #B5720A; --accent-2: #8E5806; --accent-rgb: 181, 114, 10;
+}
+html[data-theme='light'][data-accent='rose'] {
+  --accent: #C93B5C; --accent-2: #A32948; --accent-rgb: 201, 59, 92;
+}
+
+/* The blocks above override existing tokens; these are new ones. Much of this
+ * file was written with literal dark hexes because nothing but dark existed.
+ * Each one is a hover, an inset, a track or a well - a shade defined *relative*
+ * to its surface rather than a colour in its own right - so light cannot reuse a
+ * panel token and has to supply its own.
+ * `html[data-theme]` outranks `:root` on specificity, so the order here is the
+ * readable one rather than the load-bearing one. */
+:root {
+  --hover:     #16202F;
+  --inset:     #0E1622;
+  --hover-line:#2C3B54;
+  --brand-ink: #06222B;
+  --track:     #182233;
+  --chip:      #1D2839;
+  --scroll:    #263349;
+  --scroll-hi: #33445F;
+  --rail-top:  #0E1420;
+  --rail-bot:  #0A0E16;
+  --hero-tint: #0F1725;
+  --stage-on:  #101B26;
+  --shot-mat:  #060A11;
+  --dim-ink:   #4A5A73;
+  /* Two translucent surfaces. They are rgba rather than solid because both sit
+   * over content — the topbar over a scrolling view, the scrim over the whole
+   * app — and the blur behind them only reads as glass if some of it shows. */
+  --bar:  rgba(11, 15, 23, 0.72);
+  --veil: rgba(5, 8, 13, 0.66);
+}
+html[data-theme='light'] {
+  --hover:     #EDF2F9;
+  --inset:     #F2F6FB;
+  --hover-line:#C6D2E2;
+  --brand-ink: #FFFFFF;
+  --track:     #E2E9F3;
+  --chip:      #EAEFF7;
+  --scroll:    #C7D2E1;
+  --scroll-hi: #AFBCCE;
+  --rail-top:  #FFFFFF;
+  --rail-bot:  #F1F5FA;
+  --hero-tint: #F6F9FD;
+  --stage-on:  #EAF7F6;
+  /* A chart shot is dark whatever the interface is. A white mat around a
+   * midnight PNG glares; this stays dim so the image is what you look at. */
+  --shot-mat:  #1A2331;
+  --dim-ink:   #8B98AB;
+  --bar:  rgba(255, 255, 255, 0.78);
+  /* Darker than the light surfaces, not lighter: a scrim's job is to push the
+   * page back, and a pale veil over a pale page dims nothing. */
+  --veil: rgba(28, 44, 68, 0.34);
+}
+
+* { box-sizing: border-box; }
+
+/* `hidden` has to win. Any rule that sets `display` on an element - and .empty,
+ * .modal and .drawer all do - silently overrides the attribute's own
+ * `display:none`, which shows every dialog in the app at once. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Vazirmatn', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  /* This is a desktop window, not a document. Text selection is enabled only
+     where selecting text is actually useful (see .table, .mono, textarea). */
+  user-select: none;
+}
+
+body {
+  /* Two very soft washes so a flat field does not read as dead. The second one
+     stays violet on purpose: a single-hue wash reads as a colour cast, two
+     hues read as light. */
+  background-image:
+    radial-gradient(900px 520px at 12% -8%, rgba(var(--accent-rgb), 0.055), transparent 70%),
+    radial-gradient(760px 480px at 100% 0%, rgba(var(--violet-rgb), 0.05), transparent 70%);
+  background-attachment: fixed;
+}
+
+::selection { background: rgba(var(--accent-rgb), 0.28); }
+
+/* Scrollbars, thin but visible rather than hidden — a table of 700 trades needs
+   a position indicator. */
+* { scrollbar-width: thin; scrollbar-color: var(--scroll) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll); border-radius: 8px; border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--scroll-hi); background-clip: content-box; }
+
+/* ── layout ───────────────────────────────────────────────────────── */
+.shell { display: flex; height: 100vh; overflow: hidden; }
+
+.rail {
+  width: var(--rail);
+  flex: 0 0 var(--rail);
+  background: linear-gradient(180deg, var(--rail-top), var(--rail-bot));
+  border-inline-end: 1px solid var(--line-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 8px 16px;
+  gap: 4px;
+}
+
+.brand {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: grid; place-items: center;
+  margin-bottom: 14px;
+  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 20px rgba(var(--accent-rgb), 0.24);
+}
+.brand svg { width: 22px; height: 22px; fill: var(--brand-ink); }
+
+.rail-btn {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  padding: 10px 4px 8px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.rail-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.rail-btn:hover { background: var(--hover); color: var(--ink-2); }
+.rail-btn.is-active { background: var(--accent-dim); color: var(--accent); }
+.rail-spacer { flex: 1; }
+
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+/* ── topbar ───────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+  padding: 18px 24px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bar);
+  backdrop-filter: blur(10px);
+}
+.topbar-left { min-width: 0; flex: 1; }
+.topbar h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.topbar-left p { margin: 2px 0 0; font-size: 12.5px; }
+.topbar-right { display: flex; align-items: flex-end; gap: 10px; }
+
+/* ── buttons ──────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 550;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.14s, border-color 0.14s, transform 0.08s, opacity 0.14s;
+}
+.btn svg { width: 15px; height: 15px; fill: currentColor; }
+.btn:hover { background: var(--hover); border-color: var(--hover-line); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.btn.primary {
+  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  border-color: transparent;
+  color: var(--brand-ink);
+  font-weight: 650;
+  box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.2);
+}
+.btn.primary:hover { filter: brightness(1.07); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--hover); }
+.btn.danger { border-color: rgba(var(--down-rgb), 0.4); color: var(--down); }
+.btn.danger:hover { background: rgba(var(--down-rgb), 0.12); }
+.btn.small { padding: 6px 11px; font-size: 12px; }
+.btn.tiny { padding: 4px 9px; font-size: 11.5px; border-radius: 8px; }
+
+/* ── fields ───────────────────────────────────────────────────────── */
+.field { display: grid; gap: 5px; min-width: 0; }
+.field > span {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.field.grow { flex: 1; }
+.field.compact > span { font-size: 10.5px; }
+
+input, select, textarea {
+  background: var(--inset);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 9px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  min-width: 0;
+  user-select: text;
+  transition: border-color 0.14s, box-shadow 0.14s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
+}
+/* The chevron is a down arrow, so it is not mirrored - only the side it sits on
+   moves, which `background-position` cannot express logically. */
+select { cursor: pointer; appearance: none; padding-inline-end: 26px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236C7B92'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 5px center;
+  background-size: 16px; }
+html[dir='rtl'] select { background-position: left 5px center; }
+textarea { resize: vertical; line-height: 1.55; }
+input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent-2); cursor: pointer; }
+
+.check { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+
+/* ── job strip ────────────────────────────────────────────────────── */
+.jobstrip {
+  padding: 11px 24px 13px;
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.06), transparent);
+}
+.jobstrip-head { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.jobstrip-head .spacer { flex: 1; }
+.jobstrip strong { font-weight: 600; }
+
+.pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.6);
+  animation: pulse 1.6s ease-out infinite;
+  flex: 0 0 auto;
+}
+@keyframes pulse {
+  70%  { box-shadow: 0 0 0 9px rgba(var(--accent-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+}
+.pulse.is-error { background: var(--down); animation: none; }
+.pulse.is-done  { background: var(--up);   animation: none; }
+
+.bar {
+  margin-top: 9px; height: 4px; border-radius: 4px;
+  background: var(--track); overflow: hidden;
+}
+.bar-fill {
+  height: 100%; width: 0;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+/* No total yet, so there is nothing honest to fill. A travelling sliver says
+   "working" without claiming a percentage. */
+.bar.is-indeterminate .bar-fill {
+  width: 32% !important;
+  animation: slide 1.25s ease-in-out infinite;
+}
+@keyframes slide {
+  0%   { transform: translateX(-105%); }
+  100% { transform: translateX(320%); }
+}
+
+/* ── views ────────────────────────────────────────────────────────── */
+.views { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 24px 40px; }
+.view { display: none; flex-direction: column; gap: 18px; }
+.view.is-active { display: flex; animation: rise 0.24s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(7px); } }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 1180px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.card-head h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; }
+.card-head .muted { font-size: 12px; flex: 1; }
+.card-head .row-actions { margin-inline-start: auto; }
+.pad { padding: 14px 18px 0; margin: 0; font-size: 12.5px; }
+
+.muted { color: var(--ink-3); }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; user-select: text; }
+.spacer { flex: 1; }
+.row-actions { display: flex; gap: 8px; align-items: center; }
+.row-actions.end { justify-content: flex-end; }
+
+.empty {
+  margin: 60px auto; max-width: 460px; text-align: center;
+  display: grid; gap: 12px; justify-items: center;
+}
+.empty h2 { margin: 0; font-size: 19px; font-weight: 600; }
+.empty p { margin: 0; color: var(--ink-3); }
+
+/* ── KPI ──────────────────────────────────────────────────────────── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+.kpi-hero {
+  background: linear-gradient(155deg, var(--panel), var(--hero-tint));
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  padding: 15px 17px;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-hero::after {
+  /* A hairline of colour down the leading edge, tinted by the value's sign. */
+  content: ''; position: absolute;
+  inset-block: 0; inset-inline-start: 0; width: 3px;
+  background: var(--flat);
+}
+.kpi-hero.is-up::after   { background: var(--up); }
+.kpi-hero.is-down::after { background: var(--down); }
+.kpi-hero.is-accent::after { background: var(--accent); }
+.kpi-hero .label {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.kpi-hero .value {
+  font-family: var(--mono); font-size: 24px; font-weight: 600;
+  margin-top: 4px; letter-spacing: -0.02em; line-height: 1.15;
+  white-space: nowrap;
+}
+/* The currency, at a size that reads as a unit rather than as part of the
+   figure - and small enough that it never pushes the number onto two lines. */
+.kpi-hero .value .unit {
+  font-size: 11.5px; font-weight: 500; color: var(--ink-3);
+  margin-inline-start: 5px; letter-spacing: 0.04em;
+}
+.kpi-hero .value.is-up   { color: var(--up); }
+.kpi-hero .value.is-down { color: var(--down); }
+.kpi-hero .note { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 1px;
+  /* The hairlines between cells are drawn by the cells' own outlines, not by a
+     coloured background showing through the gaps. The gap trick is shorter but
+     paints the empty tail of an incomplete last row too - a 12-cell block in 5
+     columns leaves three cells of bare separator colour, which is invisible on
+     a dark panel and reads as an unfinished table on a white one. */
+  background: var(--panel);
+}
+.kpi {
+  background: var(--panel);
+  /* Outlines sit outside the border box without taking part in layout, so two
+     neighbours each lay 1px into the shared 1px gap and it closes seamlessly.
+     The perimeter overhangs the grid by 1px, which the card clips away. */
+  outline: 1px solid var(--line-soft);
+  padding: 12px 15px;
+  display: grid;
+  gap: 2px;
+  align-content: start;
+}
+.kpi .label {
+  font-size: 10.5px; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.kpi .value {
+  font-family: var(--mono); font-size: 16px; font-weight: 550;
+  font-variant-numeric: tabular-nums; user-select: text;
+}
+.kpi .value.is-up   { color: var(--up); }
+.kpi .value.is-down { color: var(--down); }
+.kpi .value.is-warn { color: var(--warn); }
+.kpi .value.is-none { color: var(--ink-3); font-size: 13px; }
+.kpi .note { font-size: 11px; color: var(--ink-3); }
+.kpi-grid.tight .kpi { padding: 9px 12px; }
+.kpi-grid.tight .value { font-size: 14px; }
+
+/* ── charts (hand-drawn SVG, no library) ──────────────────────────── */
+.chart-host { padding: 14px 16px 16px; display: grid; align-content: center; }
+.chart-host svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* The line chart keeps its own aspect ratio - stretching the viewBox to the card
+   width would squash the axis labels along with the plot. A donut has to stay
+   round and stay small: at full card width it becomes a 700px wheel. */
+.chart-host svg.chart-line { max-width: 100%; }
+.chart-host svg.chart-donut { max-width: 232px; margin: 0 auto; }
+.chart-host .grid-line { stroke: var(--line-soft); stroke-width: 1; }
+.chart-host .axis-text { fill: var(--ink-3); font-size: 10px; font-family: var(--mono); }
+.chart-host .series-line { fill: none; stroke: var(--accent); stroke-width: 2;
+  stroke-linejoin: round; stroke-linecap: round; }
+.chart-host .series-area { fill: url(#eqfill); }
+.chart-host .zero-line { stroke: var(--ink-3); stroke-dasharray: 3 4; stroke-width: 1; }
+.donut-label { fill: var(--ink); font-size: 13px; font-weight: 600; font-family: var(--mono); }
+.donut-sub { fill: var(--ink-3); font-size: 10px; }
+.legend { display: flex; gap: 16px; justify-content: center; margin-top: 6px;
+  font-size: 12px; color: var(--ink-2); flex-wrap: wrap; }
+.legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block;
+  margin-inline-end: 6px; vertical-align: baseline; }
+
+/* ── tables ───────────────────────────────────────────────────────── */
+.filters {
+  display: flex; align-items: flex-end; gap: 12px;
+  padding: 14px 18px; border-bottom: 1px solid var(--line-soft);
+}
+.table-wrap { overflow: auto; max-height: calc(100vh - 300px); }
+.table { width: 100%; border-collapse: collapse; font-size: 12.5px; user-select: text; }
+.table th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--inset);
+  text-align: start;
+  padding: 9px 12px;
+  font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line-soft);
+  white-space: nowrap;
+}
+.table th.num, .table td.num { text-align: end; font-family: var(--mono);
+  font-variant-numeric: tabular-nums; }
+.table tbody tr { cursor: pointer; transition: background 0.1s; }
+.table tbody tr:hover { background: var(--hover); }
+.table tbody tr.is-open-pos { background: rgba(var(--warn-rgb), 0.05); }
+.table .is-up   { color: var(--up); }
+.table .is-down { color: var(--down); }
+.table .dim     { color: var(--ink-3); }
+
+.tag {
+  display: inline-block; padding: 1px 7px; border-radius: 6px;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+  background: var(--chip); color: var(--ink-2);
+}
+.tag.buy  { background: rgba(var(--up-rgb), 0.14); color: var(--up); }
+.tag.sell { background: rgba(var(--down-rgb), 0.14); color: var(--down); }
+.tag.warn { background: rgba(var(--warn-rgb), 0.14); color: var(--warn); }
+.tag.info { background: rgba(var(--accent-rgb), 0.13); color: var(--accent); }
+
+.pager {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 11px; border-top: 1px solid var(--line-soft);
+}
+
+.weight { height: 5px; border-radius: 3px; background: var(--track); min-width: 60px; }
+.weight > i { display: block; height: 100%; border-radius: 3px; }
+
+.tabs { display: flex; gap: 4px; padding: 12px 18px 0; }
+.tab {
+  border: 0; background: transparent; color: var(--ink-3);
+  font: inherit; font-size: 12.5px; font-weight: 550;
+  padding: 6px 13px; border-radius: 8px; cursor: pointer;
+  transition: background 0.13s, color 0.13s;
+}
+.tab:hover { background: var(--hover); color: var(--ink-2); }
+.tab.is-active { background: var(--accent-dim); color: var(--accent); }
+
+/* ── lists ────────────────────────────────────────────────────────── */
+.list { display: flex; flex-direction: column; }
+.list-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.list-row:last-child { border-bottom: 0; }
+.list-row .grow { flex: 1; min-width: 0; }
+.list-row .title { font-weight: 550; font-size: 13px; }
+.list-row .sub {
+  font-size: 11.5px; color: var(--ink-3); font-family: var(--mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  user-select: text;
+}
+/* The path is the least interesting true fact about a terminal. */
+.list-row .sub.dim { color: var(--dim-ink); font-size: 11px; }
+.list-empty { padding: 22px 18px; color: var(--ink-3); font-size: 13px; text-align: center; }
+
+.list-row .title .pill {
+  margin-inline-start: 8px; padding: 1px 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
+  background: rgba(var(--warn-rgb), 0.14); color: var(--warn);
+  border: 1px solid rgba(var(--warn-rgb), 0.28);
+  vertical-align: 1px;
+}
+.stack-right {
+  display: grid; justify-items: end; gap: 1px; text-align: end;
+  flex: 0 0 auto; font-size: 12.5px;
+}
+.stack-right .tiny { font-size: 10.5px; }
+
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; background: var(--flat); }
+.dot.ok   { background: var(--up); }
+.dot.bad  { background: var(--down); }
+.dot.off  { background: var(--ink-3); }
+.dot.warn { background: var(--warn); }
+
+/* ── settings form ────────────────────────────────────────────────── */
+.form-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px 18px; padding: 16px 18px;
+}
+.form-grid .field.wide { grid-column: 1 / -1; }
+.form-grid .hint { font-size: 11px; color: var(--ink-3); margin-top: -2px; }
+.save-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 18px;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  position: sticky; bottom: 0;
+  box-shadow: var(--shadow);
+}
+
+/* ── modal ────────────────────────────────────────────────────────── */
+.modal, .drawer {
+  position: fixed; inset: 0; z-index: 60;
+  background: var(--veil);
+  backdrop-filter: blur(3px);
+  display: grid;
+  animation: fade 0.16s ease both;
+}
+@keyframes fade { from { opacity: 0; } }
+.modal { place-items: center; padding: 24px; }
+.modal-card {
+  width: min(560px, 100%);
+  /* Short windows exist. Scroll the dialog rather than clipping its buttons. */
+  max-height: calc(100vh - 48px); overflow-y: auto;
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  display: grid; gap: 15px;
+  animation: pop 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+@keyframes pop { from { opacity: 0; transform: scale(0.96) translateY(8px); } }
+.modal-card h2 { margin: 0; font-size: 18px; font-weight: 620; }
+.modal-card > p { margin: 0; font-size: 12.5px; }
+.modal-fields { display: grid; grid-template-columns: 1.4fr 1.4fr 0.8fr; gap: 12px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+.stage-list { display: grid; gap: 7px; }
+.stage {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 10px 13px;
+  background: var(--inset);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.13s, background 0.13s;
+}
+.stage:hover { border-color: var(--hover-line); }
+.stage:has(input:checked) { border-color: rgba(var(--accent-rgb), 0.34); background: var(--stage-on); }
+.stage input { margin-top: 3px; }
+.stage strong { display: block; font-size: 13px; font-weight: 570; }
+.stage small { color: var(--ink-3); font-size: 11.5px; }
+
+/* ── drawer ───────────────────────────────────────────────────────── */
+.drawer {
+  justify-items: end;
+  /* A single row track capped at the viewport. Without this the auto row grows
+   * to fit the content, `height: 100%` on the card resolves against that taller
+   * track, and the body never gets a bounded height to scroll inside - the
+   * notes field ends up below the fold with no way to reach it. */
+  grid-template-rows: minmax(0, 1fr);
+}
+.drawer-card {
+  width: min(1080px, 100%);
+  height: 100%; min-height: 0;
+  background: var(--bg-2);
+  border-inline-start: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+  animation: slidein 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+/* The drawer enters from the edge it is docked against, so the offset is signed
+   by direction. `translate` takes a percentage of the element; a logical
+   property for transforms does not exist. */
+@keyframes slidein { from { transform: translateX(28px); opacity: 0; } }
+html[dir='rtl'] .drawer-card { animation-name: slidein-rtl; }
+@keyframes slidein-rtl { from { transform: translateX(-28px); opacity: 0; } }
+.drawer-head {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.drawer-head h2 { margin: 0; font-size: 17px; font-weight: 620; font-family: var(--mono); }
+.drawer-head p { margin: 2px 0 0; font-size: 12px; }
+.drawer-head .row-actions { margin-inline-start: auto; }
+.drawer-body {
+  /* min-height:0 is what lets a flex child shrink below its content and scroll. */
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 16px 20px 28px;
+  display: grid; gap: 16px; align-content: start;
+}
+
+.shot-tabs { display: flex; gap: 5px; flex-wrap: wrap; }
+.shot-tab {
+  border: 1px solid var(--line-soft); background: var(--inset);
+  color: var(--ink-2); font: inherit; font-size: 11.5px; font-weight: 550;
+  padding: 5px 11px; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  /* "H4 close" is a sequenced token, not a phrase: the timeframe qualifies the
+     event and reading it backwards is reading a different label. The two words
+     are separate spans so the timeframe can be monospaced, which means a mirrored
+     layout would otherwise reverse them into "close H4". */
+  direction: ltr;
+  transition: border-color 0.13s, color 0.13s, background 0.13s;
+}
+.shot-tab:hover { border-color: var(--hover-line); color: var(--ink); }
+.shot-tab.is-active {
+  background: var(--accent-dim); border-color: rgba(var(--accent-rgb), 0.4);
+  color: var(--accent);
+}
+.shot-tab .tf { font-family: var(--mono); }
+.shot-tab.is-missing { opacity: 0.42; }
+
+.shot-stage { display: grid; gap: 7px; }
+.shot-stage img {
+  width: 100%; border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--shot-mat);
+  display: block;
+  min-height: 120px;
+}
+.shot-stage p { margin: 0; font-size: 11.5px; }
+
+/* ── toasts ───────────────────────────────────────────────────────── */
+.toasts {
+  position: fixed; bottom: 18px; inset-inline-end: 18px; z-index: 90;
+  display: grid; gap: 8px; justify-items: end;
+  pointer-events: none;
+}
+.toast {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  max-width: 420px;
+  box-shadow: var(--shadow);
+  animation: toastin 0.2s ease both;
+  pointer-events: auto;
+  user-select: text;
+}
+@keyframes toastin { from { opacity: 0; transform: translateY(8px); } }
+.toast.is-error { border-inline-start-color: var(--down); }
+.toast.is-good  { border-inline-start-color: var(--up); }
+.toast.is-warn  { border-inline-start-color: var(--warn); }
+.toast strong { display: block; font-weight: 600; margin-bottom: 1px; }
+
+/* ── bidirectional text ───────────────────────────────────────────────
+ * `dir=rtl` does two jobs at once: it mirrors the layout, and it makes RTL the
+ * base direction for every paragraph. The first is wanted. The second is not,
+ * because the interface labels are English: in an RTL paragraph a trailing
+ * period is a neutral character that belongs to the paragraph rather than to the
+ * sentence, so "Applies the moment you press Save." renders with its full stop
+ * against the left margin - ".Applies the moment you press Save".
+ *
+ * `unicode-bidi: plaintext` takes each paragraph's direction from its first
+ * strong character instead, which is the same rule a mail client uses. An English
+ * hint then reads left-to-right with its period where it was typed, a Persian
+ * note reads right-to-left, and the mirrored layout around them is untouched.
+ * Applied to text leaves only - on a flex row it would fight the mirroring.
+ */
+.field > span, .hint, .muted, .pad, .empty p,
+.kpi .label, .kpi .value, .kpi .note,
+.list-row .title, .list-row .sub,
+.table td, .table th,
+h1, h2, h3, small, textarea, input[type='text'], input[type='search'] {
+  unicode-bidi: plaintext;
+}
+
+/* A note is the one place the user's own words land, and they may be in either
+   language whatever the interface is set to. `plaintext` above gives the field
+   its direction from what was typed; this keeps the caret and the placeholder on
+   the matching side before there is anything to judge. */
+#d-note { text-align: start; }
+
+/* ── right-to-left, for when the UI language is Persian ─────────────
+ * Short, and meant to stay short. Everything that mirrors cleanly uses a logical
+ * property at its own rule instead - `border-inline-end`, `text-align: start`,
+ * `inset-inline-start`. What is left here are the two cases with no logical
+ * form: `justify-items` on a grid, which has no `start`-relative-to-writing
+ * variant that means "the docked edge", and the signed drawer transform above.
+ */
+html[dir='rtl'] .drawer { justify-items: start; }
+html[dir='rtl'] .toasts { justify-items: start; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

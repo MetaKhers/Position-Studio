@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MT5 Position Studio</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+
+<!-- The token is substituted by the server when it serves this file, so it
+     never exists on disk. Every /api and /charts request carries it. -->
+<script>window.STUDIO_TOKEN = "__STUDIO_TOKEN__";</script>
+
+<!-- Theme and accent are applied before the first paint, from the copy of the
+     settings the last save left behind. Waiting for /api/bootstrap would show a
+     dark teal window for a beat and then swap it - a visible flinch on every
+     launch. -->
+<script>
+  try {
+    var pref = JSON.parse(localStorage.getItem('pstudio.appearance') || '{}');
+    if (pref.theme) document.documentElement.dataset.theme = pref.theme;
+    if (pref.accent) document.documentElement.dataset.accent = pref.accent;
+  } catch (e) { /* A corrupt preference must never stop the app booting. */ }
+</script>
+
+<div class="shell">
+
+  <!-- ── rail ──────────────────────────────────────────────────────── -->
+  <nav class="rail" aria-label="Sections">
+    <div class="brand" title="MT5 Position Studio">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="3" y="17" width="4" height="11" rx="1.4"/>
+        <rect x="10" y="9"  width="4" height="19" rx="1.4"/>
+        <rect x="17" y="13" width="4" height="15" rx="1.4"/>
+        <rect x="24" y="4"  width="4" height="24" rx="1.4"/>
+      </svg>
+    </div>
+
+    <button class="rail-btn is-active" data-view="overview" title="Overview">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4zM14 20h6V4h-6zM4 20h6v-4H4z"/></svg>
+      <span>Overview</span>
+    </button>
+    <button class="rail-btn" data-view="trades" title="Trades">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v2H3zM3 11h18v2H3zM3 17h12v2H3z"/></svg>
+      <span>Trades</span>
+    </button>
+    <button class="rail-btn" data-view="insights" title="Insights">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16v2H4zM5 16l5-6 4 4 6-8v9H5z"/></svg>
+      <span>Insights</span>
+    </button>
+    <button class="rail-btn" data-view="terminals" title="Terminals">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h18v12H3zm0 14h18v2H3zm4-9 3 3-3 3v-2l1-1-1-1z"/></svg>
+      <span>Terminals</span>
+    </button>
+    <button class="rail-btn" data-view="settings" title="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 4-2.1-.6a7 7 0 00-.7-1.7l1.1-1.9-1.6-1.6-1.9 1.1a7 7 0 00-1.7-.7L13.5 4h-3l-.6 2.1a7 7 0 00-1.7.7L6.3 5.7 4.7 7.3l1.1 1.9a7 7 0 00-.7 1.7L3 12v3l2.1.6a7 7 0 00.7 1.7l-1.1 1.9 1.6 1.6 1.9-1.1a7 7 0 001.7.7L10.5 23h3l.6-2.1a7 7 0 001.7-.7l1.9 1.1 1.6-1.6-1.1-1.9a7 7 0 00.7-1.7L21 15z"/></svg>
+      <span>Settings</span>
+    </button>
+
+    <div class="rail-spacer"></div>
+
+    <button class="rail-btn" data-action="open-charts" title="Open the charts folder">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <span>Charts</span>
+    </button>
+  </nav>
+
+  <!-- ── main ──────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 id="view-title">Overview</h1>
+        <p id="view-sub" class="muted">Loading…</p>
+      </div>
+
+      <div class="topbar-right">
+        <label class="field compact">
+          <span>Account</span>
+          <select id="account-select"></select>
+        </label>
+
+        <button class="btn ghost" id="btn-refresh" title="Reload from the database">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5V2L7 6l5 4V7a5 5 0 11-5 5H5a7 7 0 107-7z"/></svg>
+          Refresh
+        </button>
+
+        <button class="btn primary" id="btn-run">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+          Run full analysis
+        </button>
+      </div>
+    </header>
+
+    <!-- job strip: hidden until something is running -->
+    <section class="jobstrip" id="jobstrip" hidden>
+      <div class="jobstrip-head">
+        <span class="pulse" id="job-pulse"></span>
+        <strong id="job-title">Working</strong>
+        <span class="muted" id="job-message"></span>
+        <span class="spacer"></span>
+        <span class="mono muted" id="job-counter"></span>
+        <span class="mono muted" id="job-elapsed"></span>
+        <button class="btn tiny danger" id="btn-cancel">Stop</button>
+      </div>
+      <div class="bar"><div class="bar-fill" id="job-bar"></div></div>
+    </section>
+
+    <div class="views">
+
+      <!-- ── Overview ───────────────────────────────────────────────── -->
+      <section class="view is-active" data-view="overview">
+        <div id="ov-empty" class="empty" hidden>
+          <h2>No account yet</h2>
+          <p>Point the app at a MetaTrader 5 terminal, then run a full analysis.
+             Everything else follows from that.</p>
+          <button class="btn primary" data-action="goto-terminals">Find my terminals</button>
+        </div>
+
+        <div id="ov-body" hidden>
+          <div class="kpi-strip" id="ov-headline"></div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>Equity curve</h3>
+                <span class="muted" id="ov-curve-note"></span>
+              </div>
+              <div class="chart-host" id="ov-curve"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Outcome split</h3></div>
+              <div class="chart-host" id="ov-donut"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Performance</h3>
+              <span class="muted">Every figure below is computed from your own closed trades.</span>
+            </div>
+            <div class="kpi-grid" id="ov-metrics"></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head"><h3>Risk &amp; drawdown</h3></div>
+              <div class="kpi-grid" id="ov-risk"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Trade management</h3></div>
+              <div class="kpi-grid" id="ov-manage"></div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-head">
+                <h3>Monte Carlo</h3>
+                <span class="muted" id="ov-mc-note"></span>
+              </div>
+              <div class="kpi-grid" id="ov-monte"></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h3>Recent activity</h3></div>
+              <div id="ov-runs" class="list"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Workbooks</h3>
+              <button class="btn ghost small" data-action="open-exports">Open folder</button>
+            </div>
+            <div id="ov-exports" class="list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Trades ─────────────────────────────────────────────────── -->
+      <section class="view" data-view="trades">
+        <div class="card">
+          <div class="filters">
+            <label class="field grow">
+              <span>Search</span>
+              <input id="f-search" type="search" placeholder="Ticket, symbol, exit reason, note…">
+            </label>
+            <label class="field">
+              <span>Symbol</span>
+              <select id="f-symbol"><option value="">All</option></select>
+            </label>
+            <label class="field">
+              <span>Outcome</span>
+              <select id="f-outcome">
+                <option value="">All</option>
+                <option value="win">Wins</option>
+                <option value="loss">Losses</option>
+                <option value="open">Still open</option>
+              </select>
+            </label>
+            <span class="spacer"></span>
+            <span class="muted mono" id="t-count"></span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table" id="t-table">
+              <thead>
+                <tr>
+                  <th>Ticket</th><th>Symbol</th><th>Side</th>
+                  <th>Opened</th><th class="num">Duration</th>
+                  <th class="num">Net</th><th class="num">R</th>
+                  <th class="num">MFE</th><th class="num">MAE</th>
+                  <th class="num">Heat</th><th>Session</th>
+                  <th>Exit</th><th class="num">Shots</th>
+                </tr>
+              </thead>
+              <tbody id="t-body"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <button class="btn ghost small" id="t-prev">Previous</button>
+            <span class="muted mono" id="t-range"></span>
+            <button class="btn ghost small" id="t-next">Next</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Insights ───────────────────────────────────────────────── -->
+      <section class="view" data-view="insights">
+        <div class="card">
+          <div class="card-head">
+            <h3>Where the money comes from</h3>
+            <span class="muted">Ranked by net. A group under
+              <span class="mono" id="ins-minsample">20</span> trades is shown but
+              should be read as an anecdote, not a statistic.</span>
+          </div>
+          <div class="tabs" id="ins-tabs">
+            <button class="tab is-active" data-group="by_symbol">Symbol</button>
+            <button class="tab" data-group="by_session">Session</button>
+            <button class="tab" data-group="by_weekday">Weekday</button>
+            <button class="tab" data-group="by_r_bucket">R band</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table" id="ins-table">
+              <thead>
+                <tr>
+                  <th>Group</th><th class="num">Trades</th><th class="num">Win %</th>
+                  <th class="num">Net</th><th class="num">Profit factor</th>
+                  <th class="num">Expectancy</th><th class="num">Avg R</th>
+                  <th class="num">Share of net</th><th class="num">Best</th>
+                  <th class="num">Worst</th><th>Weight</th>
+                </tr>
+              </thead>
+              <tbody id="ins-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Terminals ──────────────────────────────────────────────── -->
+      <section class="view" data-view="terminals">
+        <div class="card">
+          <div class="card-head">
+            <h3>MetaTrader 5 terminals</h3>
+            <div class="row-actions">
+              <button class="btn ghost small" id="btn-add">Add manually…</button>
+              <button class="btn primary small" id="btn-scan">Rescan this PC</button>
+            </div>
+          </div>
+          <p class="muted pad">
+            The scanner checks installed programs, the roaming data folder and any
+            terminal currently running. Portable installs living somewhere unusual
+            will not be found — add those by hand.
+          </p>
+          <div id="term-list" class="list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Accounts</h3></div>
+          <div id="acct-list" class="list"></div>
+        </div>
+      </section>
+
+      <!-- ── Settings ───────────────────────────────────────────────── -->
+      <section class="view" data-view="settings">
+        <div class="card">
+          <div class="card-head">
+            <h3>Appearance</h3>
+            <span class="muted">Applies the moment you press Save.</span>
+          </div>
+          <div class="form-grid" id="set-ui"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Capture</h3>
+            <span class="muted">How the chart images are built.</span>
+          </div>
+          <div class="form-grid" id="set-capture"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Analysis</h3>
+            <span class="muted">How the numbers are measured.</span>
+          </div>
+          <div class="form-grid" id="set-analysis"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h3>Naming</h3>
+            <span class="muted">Folder and file templates. Tokens:
+              <span class="mono">{seq} {ticket} {symbol} {side} {tf} {event} {date} {time} {outcome}</span>
+            </span>
+          </div>
+          <div class="form-grid" id="set-naming"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Maintenance</h3></div>
+          <div class="form-grid" id="set-danger"></div>
+        </div>
+        <div class="save-bar">
+          <span class="muted" id="set-status">Changes save when you press Save.</span>
+          <span class="spacer"></span>
+          <button class="btn ghost" id="btn-set-reset">Restore defaults</button>
+          <button class="btn primary" id="btn-set-save">Save settings</button>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ── run dialog ─────────────────────────────────────────────────── -->
+<div class="modal" id="run-modal" hidden>
+  <div class="modal-card">
+    <h2>Run full analysis</h2>
+    <p class="muted">
+      Reads history, computes excursions, renders every chart and writes the
+      workbook. Only positions that have not been analyzed are touched unless you
+      say otherwise.
+    </p>
+    <div class="stage-list" id="run-stages">
+      <label class="stage"><input type="checkbox" value="sync" checked>
+        <div><strong>Read history</strong><small>Pull deals and positions from the terminal</small></div></label>
+      <label class="stage"><input type="checkbox" value="analyze" checked>
+        <div><strong>Analyze</strong><small>MAE, MFE, R-multiples, efficiency, duration</small></div></label>
+      <label class="stage"><input type="checkbox" value="capture" checked>
+        <div><strong>Render charts</strong><small>Entry and exit shots across five timeframes</small></div></label>
+      <label class="stage"><input type="checkbox" value="export" checked>
+        <div><strong>Build workbook</strong><small>Dashboard, pivots, findings, chart index</small></div></label>
+    </div>
+    <div class="modal-fields">
+      <label class="field">
+        <span>Terminal</span>
+        <select id="run-terminal"></select>
+      </label>
+      <label class="field">
+        <span>Scope</span>
+        <select id="run-scope">
+          <option value="pending">Only what is new or unanalyzed</option>
+          <option value="all">Everything, from scratch</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Limit</span>
+        <input id="run-limit" type="number" min="0" step="1" placeholder="no limit">
+      </label>
+    </div>
+    <label class="check">
+      <input type="checkbox" id="run-open" checked>
+      Open the workbook folder when it finishes
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn primary" id="btn-run-go">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── position drawer ────────────────────────────────────────────── -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-card">
+    <header class="drawer-head">
+      <div>
+        <h2 id="d-title">Position</h2>
+        <p class="muted" id="d-sub"></p>
+      </div>
+      <div class="row-actions">
+        <button class="btn ghost small" id="d-folder">Open folder</button>
+        <button class="btn ghost small" data-close>Close</button>
+      </div>
+    </header>
+    <div class="drawer-body">
+      <div class="kpi-grid tight" id="d-metrics"></div>
+      <div class="shot-tabs" id="d-tabs"></div>
+      <div class="shot-stage">
+        <img id="d-image" alt="Chart">
+        <p class="muted" id="d-caption"></p>
+      </div>
+      <label class="field">
+        <span>Notes — what you saw, what you would do again</span>
+        <textarea id="d-note" rows="4" placeholder="One honest sentence beats a paragraph of excuses."></textarea>
+      </label>
+      <div class="row-actions end">
+        <span class="muted" id="d-note-status"></span>
+        <button class="btn primary small" id="d-note-save">Save note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>

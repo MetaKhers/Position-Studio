@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "capture": {
+    "candles_min": 80,
+    "candles_target": 100,
+    "candles_max": 120,
+    "open_timeframes": [
+      "M15",
+      "M5",
+      "M1"
+    ],
+    "close_timeframes": [
+      "H4",
+      "H1",
+      "M15",
+      "M5",
+      "M1"
+    ],
+    "entry_anchor": 0.62,
+    "exit_anchor": 0.68,
+    "render_journey": true,
+    "width": 1920,
+    "height": 1080,
+    "supersample": 2,
+    "image_format": "png",
+    "jpeg_quality": 92,
+    "skip_existing": true,
+    "theme": "midnight"
+  },
+  "analysis": {
+    "excursion_source": "auto",
+    "tick_trade_max_minutes": 240,
+    "seconds_threshold": 61,
+    "risk_free_rate": 0.0,
+    "sessions": {
+      "Asia": [
+        0,
+        8
+      ],
+      "London": [
+        8,
+        13
+      ],
+      "NY Overlap": [
+        13,
+        17
+      ],
+      "NY Late": [
+        17,
+        24
+      ]
+    },
+    "monte_carlo_runs": 5000,
+    "monte_carlo_horizon": 100
+  },
+  "profile": {
+    "account_risk_pct": 1.0,
+    "target_r": 2.0,
+    "trades_per_day_budget": 0,
+    "revenge_window_minutes": 0
+  },
+  "naming": {
+    "folder": "{symbol}/{date}_{ticket}_{symbol}_{side}_{outcome}",
+    "file": "{seq}_{ticket}_{symbol}_{side}_{tf}_{event}_{date}-{time}",
+    "date_format": "%Y-%m-%d",
+    "time_format": "%H%M%S"
+  },
+  "ui": {
+    "language": "fa",
+    "theme": "dark",
+    "accent": "cyan",
+    "auto_scan_on_start": true
+  },
+  "export": {
+    "include_charts_sheet": true,
+    "embed_thumbnails": true,
+    "max_embedded_rows": 400
+  }
+}
